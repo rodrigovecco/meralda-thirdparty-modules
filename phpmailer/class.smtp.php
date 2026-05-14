@@ -15,6 +15,11 @@
  * @note This program is distributed in the hope that it will be useful - WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * Modification — 2026-05-13 — Rodrigo Vecco Haddad
+ * In startTLS(), replaced STREAM_CRYPTO_METHOD_TLS_CLIENT with STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
+ * to force TLS 1.2 explicitly. Some SMTP servers reject the older TLS 1.0/1.1 negotiation
+ * that STREAM_CRYPTO_METHOD_TLS_CLIENT may fall back to.
  */
 
 /**
@@ -330,7 +335,20 @@ class SMTP
         if (!$this->sendCommand('STARTTLS', 'STARTTLS', 220)) {
             return false;
         }
-        // Begin encrypted connection
+
+
+		// Begin encrypted connection
+        // rvh 20260513 — Explicitly forced TLSv1.2 because STREAM_CRYPTO_METHOD_TLS_CLIENT
+        // may negotiate older TLS versions (1.0/1.1) that the SMTP server rejects.
+        // Original code kept below for reference. — Rodrigo Vecco Haddad
+        if (!stream_socket_enable_crypto(
+            $this->smtp_conn,
+            true,
+            STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT
+        )) {
+            return false;
+        }
+        /*
         if (!stream_socket_enable_crypto(
             $this->smtp_conn,
             true,
@@ -338,6 +356,8 @@ class SMTP
         )) {
             return false;
         }
+        */
+       
         return true;
     }
 
